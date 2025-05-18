@@ -229,7 +229,7 @@ public class Matriz_Funcionamiento {
     }
 
     // Método para reconstruir la ruta usando la matriz de siguiente nodo
-    private static List<String> reconstruirRuta(int origen, int destino, Map<String, Integer> ciudadIndice) {
+    public static List<String> reconstruirRuta(int origen, int destino, Map<String, Integer> ciudadIndice) {
         List<String> ruta = new ArrayList<>();
 
         // Obtener los nombres de las ciudades a partir de los índices
