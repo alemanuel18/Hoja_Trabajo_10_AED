@@ -10,6 +10,9 @@ import java.util.Map;
 
 public class Matriz_Funcionamiento {
 
+    // Estructura para almacenar el siguiente nodo en el camino más corto
+    private static int[][] siguienteNodo;
+
     // Método para leer el archivo logistica.txt y obtener las aristas del grafo
     public static List<Arista> leerArchivoLogistica(String nombreArchivo) throws IOException {
         List<Arista> aristas = new ArrayList<>();
@@ -32,6 +35,19 @@ public class Matriz_Funcionamiento {
                 }
             }
         }
+
+        return aristas;
+    }
+
+    // Método para agregar una nueva arista al grafo
+    public static List<Arista> agregarArista(List<Arista> aristas, String origen, String destino,
+            double tiempoNormal, double tiempoLluvia,
+            double tiempoNieve, double tiempoTormenta) {
+        // Crear una nueva arista con los datos proporcionados
+        Arista nuevaArista = new Arista(origen, destino, tiempoNormal, tiempoLluvia, tiempoNieve, tiempoTormenta);
+
+        // Añadir la arista al listado de aristas
+        aristas.add(nuevaArista);
 
         return aristas;
     }
@@ -84,11 +100,18 @@ public class Matriz_Funcionamiento {
     public static double[][] algoritmoFloyd(double[][] matriz) {
         int n = matriz.length;
         double[][] distancias = new double[n][n];
+        siguienteNodo = new int[n][n];
 
         // Copiar la matriz original
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 distancias[i][j] = matriz[i][j];
+                // Inicializar la matriz de siguiente nodo
+                if (i != j && distancias[i][j] < Double.POSITIVE_INFINITY) {
+                    siguienteNodo[i][j] = j;
+                } else {
+                    siguienteNodo[i][j] = -1;
+                }
             }
         }
 
@@ -98,6 +121,7 @@ public class Matriz_Funcionamiento {
                 for (int j = 0; j < n; j++) {
                     if (distancias[i][k] + distancias[k][j] < distancias[i][j]) {
                         distancias[i][j] = distancias[i][k] + distancias[k][j];
+                        siguienteNodo[i][j] = siguienteNodo[i][k];
                     }
                 }
             }
@@ -175,17 +199,65 @@ public class Matriz_Funcionamiento {
         return ciudadCentral;
     }
 
-    // Método para agregar una nueva arista al grafo
-    public static List<Arista> agregarArista(List<Arista> aristas, String origen, String destino,
-            double tiempoNormal, double tiempoLluvia,
-            double tiempoNieve, double tiempoTormenta) {
-        // Crear una nueva arista con los datos proporcionados
-        Arista nuevaArista = new Arista(origen, destino, tiempoNormal, tiempoLluvia, tiempoNieve, tiempoTormenta);
+    // Método para encontrar la ruta más corta entre dos ciudades y mostrar las
+    // ciudades intermedias
+    public static void mostrarRutaMasCorta(String origen, String destino, Map<String, Integer> ciudadIndice,
+            double[][] distancias) {
+        // Obtener los índices de las ciudades origen y destino
+        Integer indiceOrigen = ciudadIndice.get(origen);
+        Integer indiceDestino = ciudadIndice.get(destino);
 
-        // Añadir la arista al listado de aristas
-        aristas.add(nuevaArista);
+        // Verificar que ambas ciudades existan en el grafo
+        if (indiceOrigen == null || indiceDestino == null) {
+            System.out.println("Error: Una o ambas ciudades no existen en el grafo.");
+            return;
+        }
 
-        return aristas;
+        // Verificar si existe una ruta entre las ciudades
+        if (distancias[indiceOrigen][indiceDestino] == Double.POSITIVE_INFINITY) {
+            System.out.println("No existe una ruta desde " + origen + " hasta " + destino);
+            return;
+        }
+
+        // Construir la ruta usando la matriz de siguiente nodo
+        List<String> ruta = reconstruirRuta(indiceOrigen, indiceDestino, ciudadIndice);
+
+        // Mostrar la distancia más corta y la ruta
+        System.out.println(
+                "La ruta más corta de " + origen + " a " + destino + " es: " + distancias[indiceOrigen][indiceDestino]);
+        System.out.println("Ruta completa: " + String.join(" -> ", ruta));
+    }
+
+    // Método para reconstruir la ruta usando la matriz de siguiente nodo
+    private static List<String> reconstruirRuta(int origen, int destino, Map<String, Integer> ciudadIndice) {
+        List<String> ruta = new ArrayList<>();
+
+        // Obtener los nombres de las ciudades a partir de los índices
+        String[] ciudades = new String[ciudadIndice.size()];
+        for (Map.Entry<String, Integer> entry : ciudadIndice.entrySet()) {
+            ciudades[entry.getValue()] = entry.getKey();
+        }
+
+        // Añadir la ciudad de origen a la ruta
+        ruta.add(ciudades[origen]);
+
+        // Si la ruta es directa, solo se añade el destino y se devuelve
+        if (siguienteNodo[origen][destino] == -1) {
+            ruta.add(ciudades[destino]);
+            return ruta;
+        }
+
+        // Reconstruir la ruta usando la matriz de siguiente nodo
+        int nodoActual = origen;
+        while (nodoActual != destino) {
+            nodoActual = siguienteNodo[nodoActual][destino];
+            if (nodoActual == -1) {
+                break; // Para evitar un bucle infinito si no hay camino
+            }
+            ruta.add(ciudades[nodoActual]);
+        }
+
+        return ruta;
     }
 
 }
