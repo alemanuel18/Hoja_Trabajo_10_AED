@@ -52,6 +52,39 @@ public class Matriz_Funcionamiento {
         return aristas;
     }
 
+    // Metodo para eliminar la arista 
+    public static List<Arista> eliminarArista(List<Arista> aristas, String origen, String destino) {
+        aristas.removeIf(a -> a.getOrigen().equals(origen) && a.getDestino().equals(destino));
+        return aristas;
+    }
+
+    // Metodo para dar nuevo costo de tiempo a las aristas acorde al clima 
+    public static double[][] actualizarMatrizPorClima(List<Arista> aristas, Map<String, Integer> ciudadIndice, int numCiudades, String clima) {
+    double[][] matriz = new double[numCiudades][numCiudades];
+
+    for (int i = 0; i < numCiudades; i++) {
+        for (int j = 0; j < numCiudades; j++) {
+            matriz[i][j] = (i == j) ? 0 : Double.POSITIVE_INFINITY;
+        }
+    }
+
+    for (Arista arista : aristas) {
+        int i = ciudadIndice.get(arista.getOrigen());
+        int j = ciudadIndice.get(arista.getDestino());
+
+        double peso = switch (clima.toLowerCase()) {
+            case "lluvia" -> arista.getTiempoLluvia();
+            case "nieve" -> arista.getTiempoNieve();
+            case "tormenta" -> arista.getTiempoTormenta();
+            default -> arista.getTiempoNormal(); 
+        };
+
+        matriz[i][j] = peso;
+    }
+
+    return matriz;
+}
+
     // Método para obtener todas las ciudades del grafo
     public static Map<String, Integer> obtenerCiudades(List<Arista> aristas) {
         Map<String, Integer> ciudades = new HashMap<>();
