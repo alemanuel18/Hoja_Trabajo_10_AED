@@ -3,18 +3,21 @@ package com.api;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 
 
 class Matriz_FuncionamientoTest {
+    private static final String ARCHIVO_PRUEBA = "src/test/resources/logistica_test.txt";
     private List<Arista> aristas;
     private Map<String, Integer> ciudadIndice;
-    private double[][] matrizAdyacencia;
-
-    @BeforeEach
-    void setUp() {
+    private double[][] matrizAdyacencia;    @BeforeEach
+    void setUp() throws IOException {
+        // Inicializar el grafo desde el archivo de prueba
+        Matriz_Funcionamiento.inicializarGrafo(ARCHIVO_PRUEBA);
+        
         // Configurar datos de prueba básicos
         aristas = Arrays.asList(
                 new Arista("CiudadA", "CiudadB", 1.0, 2.0, 3.0, 4.0),
@@ -117,5 +120,66 @@ class Matriz_FuncionamientoTest {
         assertNotNull(ruta);
         assertFalse(ruta.isEmpty());
         assertEquals("CiudadA", ruta.get(0));
+    }
+
+    @Test
+    void testCambiarClima() {
+        assertEquals("normal", Matriz_Funcionamiento.getClimaActual());
+        Matriz_Funcionamiento.cambiarClima("lluvia");
+        assertEquals("lluvia", Matriz_Funcionamiento.getClimaActual());
+    }
+
+    @Test
+    void testEliminarArista() {
+        int tamañoInicial = aristas.size();
+        List<Arista> nuevasAristas = Matriz_Funcionamiento.eliminarArista(aristas, "CiudadA", "CiudadB");
+        assertEquals(tamañoInicial - 1, nuevasAristas.size());
+        assertFalse(nuevasAristas.stream().anyMatch(a -> 
+            a.getOrigen().equals("CiudadA") && a.getDestino().equals("CiudadB")));
+    }
+
+    @Test
+    void testActualizarMatrizPorClima() {
+        double[][] matrizNormal = Matriz_Funcionamiento.actualizarMatrizPorClima(
+            aristas, ciudadIndice, ciudadIndice.size(), "normal");
+        double[][] matrizLluvia = Matriz_Funcionamiento.actualizarMatrizPorClima(
+            aristas, ciudadIndice, ciudadIndice.size(), "lluvia");
+        
+        assertNotNull(matrizNormal);
+        assertNotNull(matrizLluvia);
+        assertNotEquals(matrizNormal[0][1], matrizLluvia[0][1]);
+    }
+
+    @Test
+    void testEstablecerNuevaConexion() {
+        Matriz_Funcionamiento.establecerNuevaConexion("CiudadD", "CiudadE", 1.0, 2.0, 3.0, 4.0);
+        Map<String, Integer> nuevoIndice = Matriz_Funcionamiento.obtenerCiudades(aristas);
+        assertTrue(nuevoIndice.containsKey("CiudadD"));
+        assertTrue(nuevoIndice.containsKey("CiudadE"));
+    }
+
+    @Test
+    void testEstablecerClimaEspecifico() {
+        Matriz_Funcionamiento.establecerClimaEspecifico("CiudadA", "CiudadB", "lluvia");
+        // Como el método solo imprime en consola, verificamos que no lance excepciones
+        assertTrue(true);
+    }    @Test
+    void testAgregarInterrupcionTrafico() {
+        int tamañoInicial = aristas.size();
+        Matriz_Funcionamiento.agregarInterrupcionTrafico("CiudadA", "CiudadB");
+        assertNotEquals(tamañoInicial, aristas.size());
+    }
+
+    @Test
+    void testGetClimaActual() {
+        String climaInicial = Matriz_Funcionamiento.getClimaActual();
+        assertEquals("normal", climaInicial);
+    }
+
+    @Test
+    void testGetCiudadCentral() {
+        String ciudadCentral = Matriz_Funcionamiento.getCiudadCentral();
+        assertNotNull(ciudadCentral);
+        assertTrue(ciudadIndice.containsKey(ciudadCentral));
     }
 }
