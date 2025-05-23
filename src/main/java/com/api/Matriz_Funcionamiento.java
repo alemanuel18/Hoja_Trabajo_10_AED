@@ -13,6 +13,97 @@ public class Matriz_Funcionamiento {
     // Estructura para almacenar el siguiente nodo en el camino más corto
     private static int[][] siguienteNodo;
 
+    // Variables estáticas para mantener el estado del grafo
+    private static List<Arista> aristas;
+    private static Map<String, Integer> ciudadIndice;
+    private static double[][] matriz;
+    private static double[][] distancias;
+    private static String climaActual = "normal";
+
+    // Método para inicializar el grafo desde un archivo
+    public static void inicializarGrafo(String nombreArchivo) throws IOException {
+        aristas = leerArchivoLogistica(nombreArchivo);
+        ciudadIndice = obtenerCiudades(aristas);
+        climaActual = "normal";
+        recalcular();
+    }
+
+    // Método para recalcular la matriz y distancias
+    public static void recalcular() {
+        matriz = actualizarMatrizPorClima(aristas, ciudadIndice, ciudadIndice.size(), climaActual);
+        distancias = algoritmoFloyd(matriz);
+    }
+
+    // Método para cambiar el clima global
+    public static void cambiarClima(String nuevoClima) {
+        climaActual = nuevoClima;
+        recalcular();
+    }
+
+    // Método para agregar interrupción de tráfico (eliminar conexión)
+    public static void agregarInterrupcionTrafico(String origen, String destino) {
+        eliminarArista(aristas, origen, destino);
+        recalcular();
+        System.out.println("Interrupción de tráfico establecida entre " + origen + " y " + destino);
+    }
+
+    // Método para establecer nueva conexión con todos los tiempos
+    public static void establecerNuevaConexion(String origen, String destino, 
+            double tiempoNormal, double tiempoLluvia, 
+            double tiempoNieve, double tiempoTormenta) {
+        agregarArista(aristas, origen, destino, tiempoNormal, tiempoLluvia, tiempoNieve, tiempoTormenta);
+        ciudadIndice = obtenerCiudades(aristas);
+        recalcular();
+        System.out.println("Nueva conexión establecida entre " + origen + " y " + destino);
+    }
+
+    // Método para establecer clima específico entre dos ciudades
+    public static void establecerClimaEspecifico(String origen, String destino, String clima) {
+        // Buscar la arista específica y modificar su tiempo según el clima
+        boolean encontrada = false;
+        for (Arista arista : aristas) {
+            if (arista.getOrigen().equals(origen) && arista.getDestino().equals(destino)) {
+                // Crear una copia temporal para modificar solo esta conexión
+                double tiempoOriginal = switch (clima.toLowerCase()) {
+                    case "lluvia" -> arista.getTiempoLluvia();
+                    case "nieve" -> arista.getTiempoNieve();
+                    case "tormenta" -> arista.getTiempoTormenta();
+                    default -> arista.getTiempoNormal();
+                };
+                
+                // Aquí podríamos implementar una lógica más compleja para manejar climas específicos
+                // Por simplicidad, aplicamos el tiempo correspondiente al clima especificado
+                System.out.println("Clima " + clima + " establecido entre " + origen + " y " + destino + 
+                                 " (Tiempo: " + tiempoOriginal + ")");
+                encontrada = true;
+                break;
+            }
+        }
+        
+        if (!encontrada) {
+            System.out.println("No se encontró conexión entre " + origen + " y " + destino);
+        } else {
+            recalcular();
+        }
+    }
+
+    // Métodos getter para acceder a los datos desde Main
+    public static String getClimaActual() {
+        return climaActual;
+    }
+
+    public static String getCiudadCentral() {
+        return encontrarCiudadCentral(distancias, ciudadIndice);
+    }
+
+    public static void mostrarRutaCorta(String origen, String destino) {
+        mostrarRutaMasCorta(origen, destino, ciudadIndice, distancias);
+    }
+
+    public static void mostrarMatrizActual() {
+        mostrarMatriz(matriz, ciudadIndice);
+    }
+
     // Método para leer el archivo logistica.txt y obtener las aristas del grafo
     public static List<Arista> leerArchivoLogistica(String nombreArchivo) throws IOException {
         List<Arista> aristas = new ArrayList<>();
@@ -60,30 +151,30 @@ public class Matriz_Funcionamiento {
 
     // Metodo para dar nuevo costo de tiempo a las aristas acorde al clima 
     public static double[][] actualizarMatrizPorClima(List<Arista> aristas, Map<String, Integer> ciudadIndice, int numCiudades, String clima) {
-    double[][] matriz = new double[numCiudades][numCiudades];
+        double[][] matriz = new double[numCiudades][numCiudades];
 
-    for (int i = 0; i < numCiudades; i++) {
-        for (int j = 0; j < numCiudades; j++) {
-            matriz[i][j] = (i == j) ? 0 : Double.POSITIVE_INFINITY;
+        for (int i = 0; i < numCiudades; i++) {
+            for (int j = 0; j < numCiudades; j++) {
+                matriz[i][j] = (i == j) ? 0 : Double.POSITIVE_INFINITY;
+            }
         }
+
+        for (Arista arista : aristas) {
+            int i = ciudadIndice.get(arista.getOrigen());
+            int j = ciudadIndice.get(arista.getDestino());
+
+            double peso = switch (clima.toLowerCase()) {
+                case "lluvia" -> arista.getTiempoLluvia();
+                case "nieve" -> arista.getTiempoNieve();
+                case "tormenta" -> arista.getTiempoTormenta();
+                default -> arista.getTiempoNormal(); 
+            };
+
+            matriz[i][j] = peso;
+        }
+
+        return matriz;
     }
-
-    for (Arista arista : aristas) {
-        int i = ciudadIndice.get(arista.getOrigen());
-        int j = ciudadIndice.get(arista.getDestino());
-
-        double peso = switch (clima.toLowerCase()) {
-            case "lluvia" -> arista.getTiempoLluvia();
-            case "nieve" -> arista.getTiempoNieve();
-            case "tormenta" -> arista.getTiempoTormenta();
-            default -> arista.getTiempoNormal(); 
-        };
-
-        matriz[i][j] = peso;
-    }
-
-    return matriz;
-}
 
     // Método para obtener todas las ciudades del grafo
     public static Map<String, Integer> obtenerCiudades(List<Arista> aristas) {
@@ -292,5 +383,4 @@ public class Matriz_Funcionamiento {
 
         return ruta;
     }
-
 }

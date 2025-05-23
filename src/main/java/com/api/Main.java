@@ -8,17 +8,20 @@ public class Main {
     public static void main(String[] args) {
         try {
             Scanner sc = new Scanner(System.in);
-            // Carga del archivo .txt
-            AdministradorGrafo grafo = new AdministradorGrafo("logistica.txt");
+            
+            // Inicializar el grafo desde el archivo
+            Matriz_Funcionamiento.inicializarGrafo("logistica.txt");
+            System.out.println("Grafo inicializado correctamente.");
 
             while (true) {
-                System.out.println("*****Analicis de Rutas ver 1.4*****");
+                System.out.println("\n*****Análisis de Rutas ver 2.0*****");
+                System.out.println("Clima actual: " + Matriz_Funcionamiento.getClimaActual());
                 System.out.println("""
                     1. Ruta más corta entre dos ciudades
                     2. Mostrar ciudad central
                     3. Modificar grafo
                     4. Mostrar matriz de adyacencia
-                    5. Salir
+                    5. Finalizar programa
                     Elija una opción:
                     """);
 
@@ -30,29 +33,41 @@ public class Main {
                         String origen = sc.nextLine();
                         System.out.print("Ciudad destino: ");
                         String destino = sc.nextLine();
-                        grafo.mostrarRuta(origen, destino);
+                        Matriz_Funcionamiento.mostrarRutaCorta(origen, destino);
                     }
-                    case 2 -> System.out.println("Ciudad central: " + grafo.getCiudadCentral());
+                    
+                    case 2 -> {
+                        String ciudadCentral = Matriz_Funcionamiento.getCiudadCentral();
+                        System.out.println("Ciudad central: " + ciudadCentral);
+                    }
 
                     case 3 -> {
                         System.out.println("""
-                            a) Eliminar ruta
-                            b) Agregar nueva ruta
-                            c) Cambiar clima 
+                            Modificaciones disponibles:
+                            a) Interrupción de tráfico entre ciudades
+                            b) Establecer nueva conexión entre ciudades
+                            c) Cambiar clima global
+                            d) Establecer clima específico entre dos ciudades
                             Elija una opción:""");
-                        String mod = sc.nextLine();
-                        switch (mod.toLowerCase()) {
+                        
+                        String mod = sc.nextLine().toLowerCase();
+                        
+                        switch (mod) {
                             case "a" -> {
-                                System.out.print("Ciudad origen: ");
+                                System.out.print("Ciudad origen (interrupción): ");
                                 String ori = sc.nextLine();
-                                System.out.print("Ciudad destino: ");
+                                System.out.print("Ciudad destino (interrupción): ");
                                 String des = sc.nextLine();
-                                grafo.eliminarConexion(ori, des);
+                                Matriz_Funcionamiento.agregarInterrupcionTrafico(ori, des);
+                                
+                                // Mostrar nueva ciudad central después de la modificación
+                                System.out.println("Nueva ciudad central: " + Matriz_Funcionamiento.getCiudadCentral());
                             }
+                            
                             case "b" -> {
-                                System.out.print("Ciudad origen: ");
+                                System.out.print("Ciudad origen (nueva conexión): ");
                                 String ori = sc.nextLine();
-                                System.out.print("Ciudad destino: ");
+                                System.out.print("Ciudad destino (nueva conexión): ");
                                 String des = sc.nextLine();
                                 System.out.print("Tiempo normal: ");
                                 double tN = Double.parseDouble(sc.nextLine());
@@ -62,30 +77,76 @@ public class Main {
                                 double tNv = Double.parseDouble(sc.nextLine());
                                 System.out.print("Tiempo tormenta: ");
                                 double tT = Double.parseDouble(sc.nextLine());
-                                grafo.agregarConexion(ori, des, tN, tL, tNv, tT);
+                                
+                                Matriz_Funcionamiento.establecerNuevaConexion(ori, des, tN, tL, tNv, tT);
+                                
+                                // Mostrar nueva ciudad central después de la modificación
+                                System.out.println("Nueva ciudad central: " + Matriz_Funcionamiento.getCiudadCentral());
                             }
+                            
                             case "c" -> {
-                                System.out.print("Ingrese clima (normal, lluvia, nieve, tormenta): ");
+                                System.out.print("Ingrese clima global (normal, lluvia, nieve, tormenta): ");
                                 String clima = sc.nextLine();
-                                grafo.cambiarClima(clima);
+                                
+                                if (clima.matches("(?i)(normal|lluvia|nieve|tormenta)")) {
+                                    Matriz_Funcionamiento.cambiarClima(clima.toLowerCase());
+                                    System.out.println("Clima global cambiado a: " + clima);
+                                    
+                                    // Mostrar nueva ciudad central después del cambio de clima
+                                    System.out.println("Nueva ciudad central: " + Matriz_Funcionamiento.getCiudadCentral());
+                                } else {
+                                    System.out.println("Clima inválido. Use: normal, lluvia, nieve o tormenta");
+                                }
                             }
+                            
+                            case "d" -> {
+                                System.out.print("Ciudad origen: ");
+                                String ori = sc.nextLine();
+                                System.out.print("Ciudad destino: ");
+                                String des = sc.nextLine();
+                                System.out.print("Clima específico (normal, lluvia, nieve, tormenta): ");
+                                String climaEsp = sc.nextLine();
+                                
+                                if (climaEsp.matches("(?i)(normal|lluvia|nieve|tormenta)")) {
+                                    Matriz_Funcionamiento.establecerClimaEspecifico(ori, des, climaEsp.toLowerCase());
+                                    
+                                    // Mostrar nueva ciudad central después de la modificación
+                                    System.out.println("Nueva ciudad central: " + Matriz_Funcionamiento.getCiudadCentral());
+                                } else {
+                                    System.out.println("Clima inválido. Use: normal, lluvia, nieve o tormenta");
+                                }
+                            }
+                            
                             default -> System.out.println("Opción inválida.");
                         }
                     }
 
-                    case 4 -> grafo.mostrarMatriz();
+                    case 4 -> {
+                        System.out.println("\nMatriz de adyacencia actual:");
+                        Matriz_Funcionamiento.mostrarMatrizActual();
+                    }
 
                     case 5 -> {
                         System.out.println("Finalizando programa...");
+                        sc.close();
                         return;
                     }
 
-                    default -> System.out.println("Opción inválida.");
+                    default -> System.out.println("Opción inválida. Por favor seleccione una opción del 1 al 5.");
                 }
+                
+                // Pausa para que el usuario pueda leer los resultados
+                System.out.println("\nPresione Enter para continuar...");
+                sc.nextLine();
             }
-        // Deteccion de error al momento de leer el archivo .txt
+            
         } catch (IOException e) {
             System.out.println("Error al leer el archivo: " + e.getMessage());
+            System.out.println("Asegúrese de que el archivo 'logistica.txt' existe en el directorio del proyecto.");
+        } catch (NumberFormatException e) {
+            System.out.println("Error: Ingrese un número válido.");
+        } catch (Exception e) {
+            System.out.println("Error inesperado: " + e.getMessage());
         }
     }
 }
